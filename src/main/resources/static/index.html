@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spring Boot Todo Final</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 40px; background-color: #f0f2f5; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #1a73e8; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 25px; }
+        input[type="text"] { flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; outline: none; transition: 0.3s; }
+        input[type="text"]:focus { border-color: #1a73e8; }
+        button#add-btn { padding: 10px 25px; background-color: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        ul { list-style: none; padding: 0; }
+        li { background: #fff; border: 1px solid #eee; margin-bottom: 10px; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
+
+        .task-content { display: flex; align-items: center; gap: 12px; flex: 1; }
+        .task-text { font-size: 16px; color: #333; cursor: pointer; }
+        .completed { text-decoration: line-through; color: #aaa; }
+
+        .actions { display: flex; gap: 8px; }
+        .edit-btn { background-color: #007bff; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+        .delete-btn { background-color: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+        button:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Project: Todo CRUD</h2>
+
+    <div class="input-group">
+        <input type="text" id="todoInput" placeholder="Add a new task...">
+        <button id="add-btn" onclick="addTodo()">Add Task</button>
+    </div>
+
+    <ul id="todoList"></ul>
+</div>
+
+<script>
+    const API_URL = "http://localhost:8081/api/todos";
+
+    // 1. GET ALL
+    async function loadTodos() {
+        const response = await fetch(API_URL);
+        const todos = await response.json();
+        const list = document.getElementById('todoList');
+        list.innerHTML = '';
+
+        todos.forEach(todo => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div class="task-content">
+                    <input type="checkbox" ${todo.completed ? 'checked' : ''}
+                           onchange="toggleStatus(${todo.id}, '${todo.task}', ${todo.completed})">
+                    <span class="task-text ${todo.completed ? 'completed' : ''}">${todo.task}</span>
+                </div>
+                <div class="actions">
+                    <button class="edit-btn" onclick="editTask(${todo.id}, '${todo.task}', ${todo.completed})">Edit</button>
+                    <button class="delete-btn" onclick="deleteTodo(${todo.id})">Delete</button>
+                </div>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+    // 2. POST (Create)
+    async function addTodo() {
+        const input = document.getElementById('todoInput');
+        if (!input.value.trim()) return;
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ task: input.value, completed: false })
+        });
+        input.value = '';
+        loadTodos();
+    }
+
+    // 3. PUT (Update Status)
+    async function toggleStatus(id, task, currentStatus) {
+        await fetch(`${API_URL}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ task: task, completed: !currentStatus })
+        });
+        loadTodos();
+    }
+
+    // 4. PUT (Edit Task Name)
+    async function editTask(id, currentTask, status) {
+        const newTaskName = prompt("Edit your task:", currentTask);
+        if (newTaskName !== null && newTaskName.trim() !== "") {
+            await fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task: newTaskName, completed: status })
+            });
+            loadTodos();
+        }
+    }
+
+    // 5. DELETE
+    async function deleteTodo(id) {
+        if(confirm("Are you sure?")) {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            loadTodos();
+        }
+    }
+
+    loadTodos();
+</script>
+
+</body>
+</html>
