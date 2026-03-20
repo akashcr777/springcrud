@@ -39,76 +39,99 @@
 </div>
 
 <script>
-    const API_URL = "http://localhost:8081/api/todos";
+    // CHANGED: Removed localhost so it works on Render
+    const API_URL = "/api/todos";
 
     // 1. GET ALL
     async function loadTodos() {
-        const response = await fetch(API_URL);
-        const todos = await response.json();
-        const list = document.getElementById('todoList');
-        list.innerHTML = '';
+        try {
+            const response = await fetch(API_URL);
+            const todos = await response.json();
+            const list = document.getElementById('todoList');
+            list.innerHTML = '';
 
-        todos.forEach(todo => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-                <div class="task-content">
-                    <input type="checkbox" ${todo.completed ? 'checked' : ''}
-                           onchange="toggleStatus(${todo.id}, '${todo.task}', ${todo.completed})">
-                    <span class="task-text ${todo.completed ? 'completed' : ''}">${todo.task}</span>
-                </div>
-                <div class="actions">
-                    <button class="edit-btn" onclick="editTask(${todo.id}, '${todo.task}', ${todo.completed})">Edit</button>
-                    <button class="delete-btn" onclick="deleteTodo(${todo.id})">Delete</button>
-                </div>
-            `;
-            list.appendChild(li);
-        });
+            todos.forEach(todo => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="task-content">
+                        <input type="checkbox" ${todo.completed ? 'checked' : ''} 
+                               onchange="toggleStatus(${todo.id}, '${todo.task}', ${todo.completed})">
+                        <span class="task-text ${todo.completed ? 'completed' : ''}">${todo.task}</span>
+                    </div>
+                    <div class="actions">
+                        <button class="edit-btn" onclick="editTask(${todo.id}, '${todo.task}', ${todo.completed})">Edit</button>
+                        <button class="delete-btn" onclick="deleteTodo(${todo.id})">Delete</button>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        } catch (error) {
+            console.error("Error loading tasks:", error);
+        }
     }
 
     // 2. POST (Create)
     async function addTodo() {
         const input = document.getElementById('todoInput');
         if (!input.value.trim()) return;
-        await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ task: input.value, completed: false })
-        });
-        input.value = '';
-        loadTodos();
+        
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task: input.value, completed: false })
+            });
+            input.value = '';
+            loadTodos();
+        } catch (error) {
+            console.error("Error adding task:", error);
+        }
     }
 
     // 3. PUT (Update Status)
     async function toggleStatus(id, task, currentStatus) {
-        await fetch(`${API_URL}/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ task: task, completed: !currentStatus })
-        });
-        loadTodos();
+        try {
+            await fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task: task, completed: !currentStatus })
+            });
+            loadTodos();
+        } catch (error) {
+            console.error("Error toggling status:", error);
+        }
     }
 
     // 4. PUT (Edit Task Name)
     async function editTask(id, currentTask, status) {
         const newTaskName = prompt("Edit your task:", currentTask);
         if (newTaskName !== null && newTaskName.trim() !== "") {
-            await fetch(`${API_URL}/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ task: newTaskName, completed: status })
-            });
-            loadTodos();
+            try {
+                await fetch(`${API_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task: newTaskName, completed: status })
+                });
+                loadTodos();
+            } catch (error) {
+                console.error("Error editing task:", error);
+            }
         }
     }
 
     // 5. DELETE
     async function deleteTodo(id) {
         if(confirm("Are you sure?")) {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            loadTodos();
+            try {
+                await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                loadTodos();
+            } catch (error) {
+                console.error("Error deleting task:", error);
+            }
         }
     }
 
+    // Initial load
     loadTodos();
 </script>
 
